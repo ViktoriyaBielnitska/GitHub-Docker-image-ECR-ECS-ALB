@@ -34,3 +34,6 @@ module "alb" {
   security_groups            = []
   enable_deletion_protection = false
 }
+resource "aws_cloudwatch_log_group" "ecs_logs" {
+  name = "/aws/ecs/ecs-ec2"
+}
