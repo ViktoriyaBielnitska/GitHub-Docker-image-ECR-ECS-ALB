@@ -1,11 +1,11 @@
 {
   "version": 4,
   "terraform_version": "1.13.4",
-  "serial": 13,
+  "serial": 9,
   "lineage": "04121b5c-37a0-9a69-d203-6968e5a9a8d8",
   "outputs": {
     "ecr_repository_url": {
-      "value": "386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello",
+      "value": null,
       "type": "string"
     }
   },
@@ -176,76 +176,6 @@
             "name": "/aws/ecs/ecs-ec2",
             "region": "us-east-1"
           },
-          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
-        }
-      ]
-    },
-    {
-      "mode": "managed",
-      "type": "aws_ecr_repository",
-      "name": "nginx",
-      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": [
-        {
-          "schema_version": 0,
-          "attributes": {
-            "arn": "arn:aws:ecr:us-east-1:386930771365:repository/nginx-hello",
-            "encryption_configuration": [
-              {
-                "encryption_type": "AES256",
-                "kms_key": ""
-              }
-            ],
-            "force_delete": null,
-            "id": "nginx-hello",
-            "image_scanning_configuration": [
-              {
-                "scan_on_push": false
-              }
-            ],
-            "image_tag_mutability": "MUTABLE",
-            "image_tag_mutability_exclusion_filter": [],
-            "name": "nginx-hello",
-            "region": "us-east-1",
-            "registry_id": "386930771365",
-            "repository_url": "386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello",
-            "tags": {},
-            "tags_all": {},
-            "timeouts": null
-          },
-          "sensitive_attributes": [],
-          "identity_schema_version": 0,
-          "identity": {
-            "account_id": "386930771365",
-            "name": "nginx-hello",
-            "region": "us-east-1"
-          },
-          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiZGVsZXRlIjoxMjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0="
-        }
-      ]
-    },
-    {
-      "mode": "managed",
-      "type": "aws_iam_instance_profile",
-      "name": "ecs_profile",
-      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": [
-        {
-          "schema_version": 0,
-          "attributes": {
-            "arn": "arn:aws:iam::386930771365:instance-profile/ecsInstanceProfile",
-            "create_date": "2025-12-19T11:30:20Z",
-            "id": "ecsInstanceProfile",
-            "name": "ecsInstanceProfile",
-            "name_prefix": "",
-            "path": "/",
-            "role": "ecsInstanceRole",
-            "tags": {},
-            "tags_all": {},
-            "unique_id": "AIPAVUFW7AWSYRWZST5YV"
-          },
-          "sensitive_attributes": [],
-          "identity_schema_version": 0,
           "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
         }
       ]

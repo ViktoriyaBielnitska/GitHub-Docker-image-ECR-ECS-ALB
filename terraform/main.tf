@@ -34,6 +34,9 @@ module "alb" {
   security_groups            = []
   enable_deletion_protection = false
 }
+# terraform/aws_cloudwatch.tf
 resource "aws_cloudwatch_log_group" "ecs_logs" {
-  name = "/aws/ecs/ecs-ec2"
+  name              = "/aws/ecs/ecs-ec2"
+  retention_in_days = 7   # можна змінити за потреби
 }
+
