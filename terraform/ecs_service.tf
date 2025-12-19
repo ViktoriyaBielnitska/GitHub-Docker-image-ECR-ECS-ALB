@@ -6,6 +6,10 @@ resource "aws_ecr_repository" "nginx" {
   image_tag_mutability = "MUTABLE"
 }
 
+output "ecr_repository_url" {
+  value = data.aws_ecr_repository.nginx.repository_url
+}
+
 # -------------------
 # ECS Task Definition
 # -------------------
