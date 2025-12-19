@@ -1,8 +1,3 @@
-variable "aws_region" {
-  type    = string
-  default = "us-east-1"
-}
-
-output "ecr_url" {
+output "ecr_repository_url" {
   value = aws_ecr_repository.nginx.repository_url
 }

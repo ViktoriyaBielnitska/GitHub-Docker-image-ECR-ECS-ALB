@@ -1,30 +1,55 @@
-name: Build & Push Docker
+name: Deploy to ECS EC2
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-    - name: Configure AWS
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
 
+    - name: Terraform Format Check
+      run: terraform fmt -check
+      working-directory: terraform
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: terraform
+
+    - name: Terraform Validate
+      run: terraform validate
+      working-directory: terraform
+
+    # Створюємо ECR репозиторій
+    - name: Terraform Apply ECR
+      run: terraform apply -auto-approve -target=aws_ecr_repository.nginx
+      working-directory: terraform
+
+    # Логін в ECR
     - name: Login to ECR
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build and push Docker image
-  env:
-    ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  run: |
-    docker build -t hello-nginx ./app
-    docker tag hello-nginx:latest $ECR_REPOSITORY:latest
-    docker push $ECR_REPOSITORY:latest
+    # Build & Push Docker Image
+    - name: Build and Push Docker Image
+      run: |
+        ECR_REPOSITORY=$(terraform -chdir=terraform output -raw ecr_repository_url)
+        docker build -t nginx-hello ./app
+        docker tag nginx-hello:latest $ECR_REPOSITORY:latest
+        docker push $ECR_REPOSITORY:latest
+
+    # Deploy all remaining Terraform resources
+    - name: Terraform Apply All
+      run: terraform apply -auto-approve
+      working-directory: terraform
