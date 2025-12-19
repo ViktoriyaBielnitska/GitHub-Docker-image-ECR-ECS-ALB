@@ -45,17 +45,6 @@ resource "aws_lb" "nginx_alb" {
   subnets            = module.vpc.public_subnets
 }
 
-
-# ALB + Target Group
-resource "aws_lb" "nginx_alb" {
-  name               = "nginx-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = module.vpc.public_subnets
-}
-
-
 resource "aws_lb_target_group" "nginx_tg" {
   name     = "nginx-tg"
   port     = 80
