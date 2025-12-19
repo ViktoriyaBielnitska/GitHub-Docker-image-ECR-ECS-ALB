@@ -1,6 +1,5 @@
 name: Deploy to ECS EC2
 
-# Запуск на пуш у main або будь-яку іншу гілку (наприклад, vikula)
 on:
   push:
     branches:
@@ -25,35 +24,37 @@ jobs:
 
     - name: Terraform Format Check
       run: terraform fmt -check
-      working-directory: terraform
+      working-directory: ./terraform
 
     - name: Terraform Init
       run: terraform init
-      working-directory: terraform
+      working-directory: ./terraform
 
     - name: Terraform Validate
       run: terraform validate
-      working-directory: terraform
+      working-directory: ./terraform
 
-    # Створюємо ECR репозиторій
+    # Створюємо ECR репозиторій окремо
     - name: Terraform Apply ECR
       run: terraform apply -auto-approve -target=aws_ecr_repository.nginx
-      working-directory: terraform
+      working-directory: ./terraform
 
     # Логін в ECR
     - name: Login to ECR
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build and Push Docker Image
-      shell: pwsh
+    # Отримуємо URL ECR
+    - name: Get ECR repository URL
+      run: echo "ECR_REPOSITORY=$(terraform -chdir=terraform output -raw ecr_repository_url)" >> $GITHUB_ENV
+
+    # Build і Push Docker image
+    - name: Build and Push Docker image
       run: |
-        $ECR_REPOSITORY = terraform -chdir=terraform output -raw ecr_repository_url
-        Write-Host "ECR repository URL: $ECR_REPOSITORY"
         docker build -t nginx-hello ./app
         docker tag nginx-hello:latest $ECR_REPOSITORY:latest
         docker push $ECR_REPOSITORY:latest
 
-    # Deploy all remaining Terraform resources
+    # Деплой всіх Terraform ресурсів (ECS, ALB, Security Groups)
     - name: Terraform Apply All
       run: terraform apply -auto-approve
-      working-directory: terraform
+      working-directory: ./terraform
