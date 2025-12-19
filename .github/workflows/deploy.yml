@@ -1,8 +1,11 @@
 name: Deploy to ECS EC2
 
+# Запуск на пуш у main або будь-яку іншу гілку (наприклад, vikula)
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - vikula
 
 jobs:
   deploy:
@@ -14,7 +17,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
-    - name: Checkout
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Setup Terraform
