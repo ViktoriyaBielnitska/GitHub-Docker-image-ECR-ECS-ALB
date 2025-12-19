@@ -21,6 +21,8 @@ jobs:
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
 
     - name: Terraform Format Check
       run: terraform fmt -check
@@ -34,20 +36,17 @@ jobs:
       run: terraform validate
       working-directory: ./terraform
 
-    # Створюємо ECR репозиторій окремо
     - name: Terraform Apply ECR
       run: terraform apply -auto-approve -target=aws_ecr_repository.nginx
       working-directory: ./terraform
 
-    # Логін в ECR
     - name: Login to ECR
       uses: aws-actions/amazon-ecr-login@v2
 
-    # Отримуємо URL репозиторію з Terraform
     - name: Get ECR repository URL
       id: ecr
       run: |
-        REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url 2>/dev/null)
+        REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url)
         REPO_URL=$(echo "$REPO_URL" | tr -d '\r' | tr -d '\n')
         if [ -z "$REPO_URL" ]; then
           echo "ECR repository URL is empty!"
@@ -56,7 +55,6 @@ jobs:
         echo "ECR_REPOSITORY=$REPO_URL" >> $GITHUB_ENV
         echo "ECR URL: $REPO_URL"
 
-    # Перевіряємо змінну перед використанням
     - name: Check ECR repository
       run: |
         echo "ECR_REPOSITORY='$ECR_REPOSITORY'"
@@ -65,24 +63,19 @@ jobs:
           exit 1
         fi
 
-    # Build Docker image
     - name: Build Docker image
-      run: |
-        docker build -t nginx-hello ./app
+      run: docker build -t nginx-hello ./app
 
-    # Tag Docker image
     - name: Tag Docker image
       run: |
         echo "Tagging Docker image as $ECR_REPOSITORY:latest"
         docker tag nginx-hello:latest "$ECR_REPOSITORY:latest"
 
-    # Push Docker image
     - name: Push Docker image
       run: |
         echo "Pushing Docker image to $ECR_REPOSITORY"
         docker push "$ECR_REPOSITORY:latest"
 
-    # Деплой всіх Terraform ресурсів (ECS, ALB, Security Groups)
     - name: Terraform Apply All
       run: terraform apply -auto-approve
       working-directory: ./terraform
