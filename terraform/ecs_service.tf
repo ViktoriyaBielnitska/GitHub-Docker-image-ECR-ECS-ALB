@@ -1,3 +1,6 @@
+# -------------------
+# ECS Task Definition
+# -------------------
 resource "aws_ecs_task_definition" "nginx_task" {
   family                   = "nginx-hello"
   network_mode             = "bridge"
@@ -22,11 +25,15 @@ resource "aws_ecs_task_definition" "nginx_task" {
   ])
 }
 
+# -------------------
+# Load Balancer and Target Group
+# -------------------
 resource "aws_lb_target_group" "nginx_tg" {
   name     = "nginx-tg"
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
+
   health_check {
     path                = "/"
     interval            = 30
@@ -55,9 +62,12 @@ resource "aws_lb_listener" "nginx_listener" {
   }
 }
 
+# -------------------
+# ECS Service
+# -------------------
 resource "aws_ecs_service" "nginx_service" {
   name            = "nginx-service"
-  cluster         = aws_ecs_cluster.main.id
+  cluster         = module.ecs.cluster_id
   task_definition = aws_ecs_task_definition.nginx_task.arn
   desired_count   = var.desired_capacity
   launch_type     = "EC2"
@@ -71,6 +81,9 @@ resource "aws_ecs_service" "nginx_service" {
   depends_on = [aws_lb_listener.nginx_listener]
 }
 
+# -------------------
+# Security Group for ALB
+# -------------------
 resource "aws_security_group" "alb_sg" {
   name        = "alb-sg"
   description = "Allow HTTP"
@@ -90,3 +103,4 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
