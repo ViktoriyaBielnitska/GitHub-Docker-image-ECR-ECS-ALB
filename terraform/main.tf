@@ -38,7 +38,7 @@ module "alb" {
 # terraform/aws_cloudwatch.tf
 resource "aws_cloudwatch_log_group" "ecs_logs" {
   name              = "/aws/ecs/ecs-ec2"
-  retention_in_days = 7 
+  retention_in_days = 7
 
   lifecycle {
     prevent_destroy = false
