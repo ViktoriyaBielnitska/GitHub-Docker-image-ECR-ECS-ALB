@@ -1,4 +1,12 @@
 # -------------------
+# ECR Repository
+# -------------------
+resource "aws_ecr_repository" "nginx" {
+  name                 = "nginx-hello"
+  image_tag_mutability = "MUTABLE"
+}
+
+# -------------------
 # ECS Task Definition
 # -------------------
 resource "aws_ecs_task_definition" "nginx_task" {
@@ -104,3 +112,10 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
+# -------------------
+# Variable for desired count
+# -------------------
+variable "desired_capacity" {
+  type    = number
+  default = 1
+}
