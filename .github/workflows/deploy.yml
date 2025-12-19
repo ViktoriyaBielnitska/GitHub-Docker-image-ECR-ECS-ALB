@@ -47,9 +47,14 @@ jobs:
     - name: Get ECR repository URL
       id: ecr
       run: |
-        REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url | tr -d '\r' | tr -d '\n' | xargs)
+        REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url 2>/dev/null)
+        REPO_URL=$(echo "$REPO_URL" | tr -d '\r' | tr -d '\n')
+        if [ -z "$REPO_URL" ]; then
+          echo "ECR repository URL is empty!"
+          exit 1
+        fi
         echo "ECR_REPOSITORY=$REPO_URL" >> $GITHUB_ENV
-        echo "ECR URL: '$REPO_URL'"
+        echo "ECR URL: $REPO_URL"
 
     # Перевіряємо змінну перед використанням
     - name: Check ECR repository
@@ -59,6 +64,11 @@ jobs:
           echo "ECR_REPOSITORY is empty! Exiting..."
           exit 1
         fi
+
+    # Build Docker image
+    - name: Build Docker image
+      run: |
+        docker build -t nginx-hello ./app
 
     # Tag Docker image
     - name: Tag Docker image
@@ -76,4 +86,3 @@ jobs:
     - name: Terraform Apply All
       run: terraform apply -auto-approve
       working-directory: ./terraform
-
