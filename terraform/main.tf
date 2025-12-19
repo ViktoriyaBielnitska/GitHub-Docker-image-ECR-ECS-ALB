@@ -37,7 +37,7 @@ data "aws_ami" "ecs" {
 # -------------------
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
-  version = "9.17.0"  # остання стабільна версія
+  version = "9.17.0" # остання стабільна версія
 
   name                       = "my-alb"
   internal                   = false
