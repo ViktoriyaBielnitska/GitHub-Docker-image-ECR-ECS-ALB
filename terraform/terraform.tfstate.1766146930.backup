@@ -1,7 +1,7 @@
 {
   "version": 4,
   "terraform_version": "1.13.4",
-  "serial": 14,
+  "serial": 13,
   "lineage": "04121b5c-37a0-9a69-d203-6968e5a9a8d8",
   "outputs": {
     "ecr_repository_url": {
@@ -140,6 +140,43 @@
           },
           "sensitive_attributes": [],
           "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_log_group",
+      "name": "ecs_logs",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:logs:us-east-1:386930771365:log-group:/aws/ecs/ecs-ec2",
+            "deletion_protection_enabled": false,
+            "id": "/aws/ecs/ecs-ec2",
+            "kms_key_id": "",
+            "log_group_class": "STANDARD",
+            "name": "/aws/ecs/ecs-ec2",
+            "name_prefix": "",
+            "region": "us-east-1",
+            "retention_in_days": 90,
+            "skip_destroy": false,
+            "tags": {
+              "Name": "/aws/ecs/ecs-ec2"
+            },
+            "tags_all": {
+              "Name": "/aws/ecs/ecs-ec2"
+            }
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "account_id": "386930771365",
+            "name": "/aws/ecs/ecs-ec2",
+            "region": "us-east-1"
+          },
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
         }
       ]
     },
