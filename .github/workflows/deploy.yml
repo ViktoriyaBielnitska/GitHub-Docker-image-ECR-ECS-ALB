@@ -42,7 +42,7 @@ jobs:
     # Логін в ECR
     - name: Login to ECR
       uses: aws-actions/amazon-ecr-login@v2
-      
+
     # Отримуємо URL ECR репозиторію
     - name: Get ECR repository URL
       id: ecr
@@ -61,3 +61,4 @@ jobs:
     - name: Terraform Apply All
       run: terraform apply -auto-approve
       working-directory: ./terraform
+
