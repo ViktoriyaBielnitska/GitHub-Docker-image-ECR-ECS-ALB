@@ -16,63 +16,86 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
+    # -------------------------------
+    # 1️⃣ Checkout repository
+    # -------------------------------
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # -------------------------------
+    # 2️⃣ Setup Terraform
+    # -------------------------------
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_wrapper: false
 
+    # -------------------------------
+    # 3️⃣ Terraform formatting & validation
+    # -------------------------------
     - name: Terraform Format Check
       run: terraform fmt -check
       working-directory: ./terraform
 
     - name: Terraform Init
-      run: terraform init -upgrade
+      run: terraform init
       working-directory: ./terraform
 
     - name: Terraform Validate
       run: terraform validate
       working-directory: ./terraform
 
-    # ===========================
-    # Apply ECR (якщо потрібно)
-    # ===========================
+    # -------------------------------
+    # 4️⃣ Apply only ECR (to make sure repo exists)
+    # -------------------------------
     - name: Terraform Apply ECR
-      run: terraform apply -auto-approve -target=data.aws_ecr_repository.nginx || true
+      run: terraform apply -auto-approve -target=aws_ecr_repository.nginx
       working-directory: ./terraform
 
-    # ===========================
-    # Get ECR URL
-    # ===========================
+    # -------------------------------
+    # 5️⃣ Login to Amazon ECR
+    # -------------------------------
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        region: ${{ secrets.AWS_REGION }}
+
+    # -------------------------------
+    # 6️⃣ Get ECR repository URL from Terraform output
+    # -------------------------------
     - name: Get ECR repository URL
       id: ecr
       run: |
-        REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url 2>/dev/null)
+        REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url)
         REPO_URL=$(echo "$REPO_URL" | tr -d '\r' | tr -d '\n')
         if [ -z "$REPO_URL" ]; then
-          echo "ECR repository URL is empty! Make sure output is defined in Terraform."
+          echo "ECR repository URL is empty!"
           exit 1
         fi
         echo "ECR_REPOSITORY=$REPO_URL" >> $GITHUB_ENV
         echo "ECR URL: $REPO_URL"
 
-    # ===========================
-    # Build & Push Docker
-    # ===========================
+    # -------------------------------
+    # 7️⃣ Build Docker image
+    # -------------------------------
     - name: Build Docker image
       run: docker build -t nginx-hello ./app
 
+    # -------------------------------
+    # 8️⃣ Tag Docker image with ECR URL
+    # -------------------------------
     - name: Tag Docker image
       run: docker tag nginx-hello:latest "$ECR_REPOSITORY:latest"
 
+    # -------------------------------
+    # 9️⃣ Push Docker image to ECR
+    # -------------------------------
     - name: Push Docker image
       run: docker push "$ECR_REPOSITORY:latest"
 
-    # ===========================
-    # Terraform Apply All (ECS, ALB ...)
-    # ===========================
+    # -------------------------------
+    # 🔟 Apply all Terraform resources
+    # -------------------------------
     - name: Terraform Apply All
       run: terraform apply -auto-approve
       working-directory: ./terraform
