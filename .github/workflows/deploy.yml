@@ -44,13 +44,16 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
 
     # Отримуємо URL ECR репозиторію
-    - name: Set ECR URL
+    - name: Get ECR repository URL
+      id: ecr
       run: |
         REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url | tr -d '\r' | tr -d '\n')
         echo "ECR_REPOSITORY=$REPO_URL" >> $GITHUB_ENV
+        echo "REPO_URL=$REPO_URL"
 
     - name: Tag Docker image
       run: |
+        echo "Tagging image $ECR_REPOSITORY:latest"
         docker tag nginx-hello:latest $ECR_REPOSITORY:latest
 
     # Build і Push Docker image
