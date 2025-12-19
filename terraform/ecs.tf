@@ -44,7 +44,7 @@ data "aws_ami" "ecs" {
 # Launch Template
 resource "aws_launch_template" "ecs_lt" {
   name_prefix   = "ecs-launch-template-"
-  image_id = data.aws_ami.ecs.id
+  image_id      = data.aws_ami.ecs.id
   instance_type = var.ecs_instance_type
 
   iam_instance_profile {
