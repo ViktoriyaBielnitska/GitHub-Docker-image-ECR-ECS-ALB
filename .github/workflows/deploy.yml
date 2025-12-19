@@ -29,53 +29,50 @@ jobs:
       working-directory: ./terraform
 
     - name: Terraform Init
-      run: terraform init
+      run: terraform init -upgrade
       working-directory: ./terraform
 
     - name: Terraform Validate
       run: terraform validate
       working-directory: ./terraform
 
+    # ===========================
+    # Apply ECR (якщо потрібно)
+    # ===========================
     - name: Terraform Apply ECR
-      run: terraform apply -auto-approve -target=aws_ecr_repository.nginx
+      run: terraform apply -auto-approve -target=data.aws_ecr_repository.nginx || true
       working-directory: ./terraform
 
-    - name: Login to ECR
-      uses: aws-actions/amazon-ecr-login@v2
-
+    # ===========================
+    # Get ECR URL
+    # ===========================
     - name: Get ECR repository URL
       id: ecr
       run: |
-        REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url)
+        REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url 2>/dev/null)
         REPO_URL=$(echo "$REPO_URL" | tr -d '\r' | tr -d '\n')
         if [ -z "$REPO_URL" ]; then
-          echo "ECR repository URL is empty!"
+          echo "ECR repository URL is empty! Make sure output is defined in Terraform."
           exit 1
         fi
         echo "ECR_REPOSITORY=$REPO_URL" >> $GITHUB_ENV
         echo "ECR URL: $REPO_URL"
 
-    - name: Check ECR repository
-      run: |
-        echo "ECR_REPOSITORY='$ECR_REPOSITORY'"
-        if [ -z "$ECR_REPOSITORY" ]; then
-          echo "ECR_REPOSITORY is empty! Exiting..."
-          exit 1
-        fi
-
+    # ===========================
+    # Build & Push Docker
+    # ===========================
     - name: Build Docker image
       run: docker build -t nginx-hello ./app
 
     - name: Tag Docker image
-      run: |
-        echo "Tagging Docker image as $ECR_REPOSITORY:latest"
-        docker tag nginx-hello:latest "$ECR_REPOSITORY:latest"
+      run: docker tag nginx-hello:latest "$ECR_REPOSITORY:latest"
 
     - name: Push Docker image
-      run: |
-        echo "Pushing Docker image to $ECR_REPOSITORY"
-        docker push "$ECR_REPOSITORY:latest"
+      run: docker push "$ECR_REPOSITORY:latest"
 
+    # ===========================
+    # Terraform Apply All (ECS, ALB ...)
+    # ===========================
     - name: Terraform Apply All
       run: terraform apply -auto-approve
       working-directory: ./terraform
