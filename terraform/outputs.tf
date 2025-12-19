@@ -10,5 +10,10 @@ output "ecr_repository_url" {
   value       = data.aws_ecr_repository.nginx.repository_url
   description = "URL існуючого ECR репозиторію"
 }
-
+output "public_subnets" {
+  value = data.aws_subnets.public.ids
+}
+output "alb_security_group_id" {
+  value = data.aws_security_group.alb_sg.id
+}
 

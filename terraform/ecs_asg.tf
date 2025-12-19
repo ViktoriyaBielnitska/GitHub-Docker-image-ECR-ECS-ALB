@@ -30,4 +30,26 @@ resource "aws_autoscaling_group" "ecs" {
     id      = aws_launch_template.ecs.id
     version = "$Latest"
   }
+
+  # Optional: target group для ALB
+  # target_group_arns = [aws_lb_target_group.nginx.arn]
+
+  health_check_type         = "EC2"
+  health_check_grace_period = 60
+  force_delete              = true
+
+  # Правильне визначення тегів
+  tag {
+    key                 = "Name"
+    value               = "ecs-instance"
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "Environment"
+    value               = "dev"
+    propagate_at_launch = true
+  }
 }
+
+

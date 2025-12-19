@@ -7,11 +7,6 @@ data "aws_subnets" "public" {
     name   = "vpc-id"
     values = [var.vpc_id]
   }
-
-  filter {
-    name   = "tag:Tier"
-    values = ["public"]
-  }
 }
 
 data "aws_ecs_cluster" "existing" {
