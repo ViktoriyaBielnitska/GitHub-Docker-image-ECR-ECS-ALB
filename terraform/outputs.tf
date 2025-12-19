@@ -7,6 +7,8 @@ output "ecs_cluster_arn" {
 }
 
 output "ecr_repository_url" {
-  value = data.aws_ecr_repository.nginx.repository_url
+  value       = data.aws_ecr_repository.nginx.repository_url
+  description = "URL існуючого ECR репозиторію"
 }
+
 
