@@ -54,7 +54,8 @@ jobs:
       - name: Get ECR repository URL
         id: ecr
         run: |
-          REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url | tr -d '\r' | tr -d '\n')
+          REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url 2>/dev/null)
+          REPO_URL=$(echo "$REPO_URL" | tr -d '\r' | tr -d '\n')
           if [ -z "$REPO_URL" ]; then
             echo "ECR repository URL is empty! Exiting..."
             exit 1
@@ -75,13 +76,18 @@ jobs:
           fi
           echo "ECR repository URL is set to: $ECR_REPOSITORY"
 
-      # 9️⃣ Tag Docker image with ECR URL
-      - name: Tag Docker image
-        run: docker tag nginx-hello:latest "${{ env.ECR_REPOSITORY }}:latest"
+      - name: Get ECR repository URL
+        id: ecr
+        run: |
+          REPO_URL=$(terraform -chdir=terraform output -raw ecr_repository_url 2>/dev/null)
+          REPO_URL=$(echo "$REPO_URL" | tr -d '\r' | tr -d '\n')
+          if [ -z "$REPO_URL" ]; then
+            echo "ECR repository URL is empty! Exiting..."
+            exit 1
+          fi
+          echo "ECR_REPOSITORY=$REPO_URL" >> $GITHUB_ENV
+          echo "ECR URL: $REPO_URL"
 
-      # 🔟 Push Docker image to ECR
-      - name: Push Docker image
-        run: docker push "${{ env.ECR_REPOSITORY }}:latest"
 
       # 1️⃣1️⃣ Apply all Terraform resources
       - name: Terraform Apply All
