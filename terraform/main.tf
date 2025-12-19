@@ -16,7 +16,7 @@ module "ecs_asg" {
   desired_capacity = 1
 
   vpc_zone_identifier = module.vpc.public_subnets
-  image_id            = data.aws_ami.ecs.id
+  image_id = data.aws_ami.ecs.id
   instance_type       = "t3.micro"
 
   user_data = base64encode("echo ECS_CLUSTER=ecs-ec2 >> /etc/ecs/ecs.config")
