@@ -43,7 +43,7 @@ jobs:
     - name: Login to ECR
       uses: aws-actions/amazon-ecr-login@v2
 
-      # Отримуємо URL ECR репозиторію
+      # Отримуємо URL ECR репозиторі.
     - name: Get ECR repository URL
       id: ecr
       run: |
