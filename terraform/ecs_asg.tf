@@ -1,3 +1,34 @@
+##########################
+# ECS EC2 IAM Role
+##########################
+resource "aws_iam_role" "ecs_instance_role" {
+  name = "ecs-instance-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
+  role       = aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  name = "ecs-instance-profile"
+  role = aws_iam_role.ecs_instance_role.name
+}
+
+##########################
+# ECS Launch Template
+##########################
 data "aws_ami" "ecs" {
   most_recent = true
   owners      = ["amazon"]
@@ -13,6 +44,10 @@ resource "aws_launch_template" "ecs" {
   image_id      = data.aws_ami.ecs.id
   instance_type = var.ecs_instance_type
 
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance_profile.name
+  }
+
   user_data = base64encode(<<EOF
 #!/bin/bash
 echo ECS_CLUSTER=${data.aws_ecs_cluster.existing.cluster_name} >> /etc/ecs/ecs.config
@@ -20,6 +55,9 @@ EOF
   )
 }
 
+##########################
+# ECS Auto Scaling Group
+##########################
 resource "aws_autoscaling_group" "ecs" {
   desired_capacity    = var.desired_capacity
   min_size            = var.desired_capacity
@@ -31,14 +69,13 @@ resource "aws_autoscaling_group" "ecs" {
     version = "$Latest"
   }
 
-  # Optional: target group для ALB
+  # Опціонально: Target Group для ALB
   # target_group_arns = [aws_lb_target_group.nginx.arn]
 
   health_check_type         = "EC2"
   health_check_grace_period = 60
   force_delete              = true
 
-  # Правильне визначення тегів
   tag {
     key                 = "Name"
     value               = "ecs-instance"
