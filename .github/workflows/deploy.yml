@@ -81,6 +81,15 @@ jobs:
       - name: Build Docker image
         run: docker build -t nginx-hello ./app
 
+
+      - name: Verify ECR repository URL
+        run: |
+          if [ -z "$ECR_REPOSITORY" ]; then
+            echo "ECR repository URL is empty! Exiting..."
+            exit 1
+          fi
+          echo "ECR repository URL is set to: $ECR_REPOSITORY"
+
       # -------------------------------
       # 8️⃣ Tag Docker image with ECR URL
       # -------------------------------
