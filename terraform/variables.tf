@@ -1,10 +1,19 @@
 variable "aws_region" {
+  type    = string
   default = "us-east-1"
 }
-variable "ecs_instance_type" {
-  default = "t3.micro"
+
+variable "vpc_id" {
+  type    = string
+  default = "vpc-0550fe5101865d5da"
 }
+
 variable "desired_capacity" {
   type    = number
   default = 1
+}
+
+variable "ecs_instance_type" {
+  type    = string
+  default = "t3.micro"
 }
