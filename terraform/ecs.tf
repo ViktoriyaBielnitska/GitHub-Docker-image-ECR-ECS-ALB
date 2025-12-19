@@ -3,7 +3,7 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_iam_role" "ecs_instance_role" {
-  name = "ecsInstanceRole"
+  name               = "ecsInstanceRole"
   assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
 }
 
@@ -55,10 +55,10 @@ resource "aws_iam_instance_profile" "ecs_profile" {
 }
 
 resource "aws_autoscaling_group" "ecs_asg" {
-  desired_capacity     = var.desired_capacity
-  max_size             = 2
-  min_size             = 1
-  vpc_zone_identifier  = module.vpc.public_subnets
+  desired_capacity    = var.desired_capacity
+  max_size            = 2
+  min_size            = 1
+  vpc_zone_identifier = module.vpc.public_subnets
   launch_template {
     id      = aws_launch_template.ecs_lt.id
     version = "$Latest"

@@ -2,11 +2,11 @@
 # ECS Cluster EC2 (official ECS module)
 # -------------------
 module "ecs" {
-source = "terraform-aws-modules/ecs/aws"
-version = "~> 5.0"
+  source  = "terraform-aws-modules/ecs/aws"
+  version = "~> 5.0"
 
 
- cluster_name = "ecs-ec2"
+  cluster_name = "ecs-ec2"
 
 }
 
@@ -29,14 +29,14 @@ module "ecs_asg" {
 
 # ECS optimized AMI
 data "aws_ami" "ecs" {
-most_recent = true
-owners = ["amazon"]
+  most_recent = true
+  owners      = ["amazon"]
 
 
-filter {
-name = "name"
-values = ["amzn2-ami-ecs-hvm-*"]
-}
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-ecs-hvm-*"]
+  }
 }
 
 
@@ -44,6 +44,6 @@ values = ["amzn2-ami-ecs-hvm-*"]
 # ALB (official ALB module)
 # -------------------
 module "alb" {
-source = "terraform-aws-modules/alb/aws"
-version = "~> 9.0"
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 9.0"
 }
