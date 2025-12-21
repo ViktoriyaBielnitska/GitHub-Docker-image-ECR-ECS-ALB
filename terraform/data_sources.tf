@@ -33,11 +33,7 @@ data "aws_lb" "existing_alb" {
 data "aws_iam_role" "ecs_instance_role" {
   name = "ecs-instance-role"
 }
+
 data "aws_iam_instance_profile" "ecs_instance_profile" {
   name = "ecs-instance-profile"
 }
-data "aws_iam_role_policy_attachment" "ecs_instance_role_attachment" {
-  role       = data.aws_iam_role.ecs_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-}
-

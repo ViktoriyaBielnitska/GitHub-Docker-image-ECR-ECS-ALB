@@ -1,3 +1,7 @@
+resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
+  role = data.aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "ecs-task-execution-role"
 
@@ -37,7 +41,7 @@ resource "aws_launch_template" "ecs" {
   instance_type = var.ecs_instance_type
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_instance_profile.name
+    name = data.aws_iam_instance_profile.ecs_instance_profile.name
   }
 
   user_data = base64encode(<<EOF
