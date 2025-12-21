@@ -56,10 +56,10 @@ jobs:
 
 
       - name: Tag Docker image
-        run: docker tag nginx-hello:latest public.ecr.aws/c5l2w2r3/nginx-hello:latest
+        run: docker tag nginx-hello:latest 386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello:latest
 
       - name: Push Docker image to ECR
-        run: docker push public.ecr.aws/c5l2w2r3/nginx-hello:latest
+        run: docker push 386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello:latest
 
       # 🔟 Apply all Terraform resources
       - name: Terraform Apply All

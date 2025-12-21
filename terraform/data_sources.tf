@@ -13,6 +13,10 @@ data "aws_ecs_cluster" "existing" {
   cluster_name = "nginx-ecs-cluster"
 }
 
+data "aws_ecr_repository" "nginx" {
+  name = "nginx-hello"
+}
+
 data "aws_security_group" "alb_sg" {
   filter {
     name   = "group-name"
@@ -33,7 +37,6 @@ data "aws_iam_role" "ecs_instance_role" {
 data "aws_iam_instance_profile" "ecs_instance_profile" {
   name = "ecs-instance-profile"
 }
-
 data "aws_iam_role" "ecs_task_execution_role" {
   name = "ecs-task-execution-role"
 }
