@@ -38,3 +38,8 @@ data "aws_ami" "ecs" {
     values = ["amzn2-ami-ecs-hvm-*"]
   }
 }
+
+data "aws_lb_listener" "http" {
+  load_balancer_arn = data.aws_lb.existing_alb.arn
+  port              = 80
+}
