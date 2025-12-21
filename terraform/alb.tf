@@ -7,6 +7,4 @@ resource "aws_lb_listener" "http" {
     type             = "forward"
     target_group_arn = data.aws_lb_target_group.nginx.arn
   }
-
-  depends_on = [data.aws_lb_target_group.nginx]
 }
