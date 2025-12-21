@@ -9,10 +9,6 @@ data "aws_subnets" "public" {
   }
 }
 
-data "aws_ecs_cluster" "existing" {
-  cluster_name = "nginx-ecs-cluster"
-}
-
 data "aws_ecr_repository" "nginx" {
   name = "nginx-hello"
 }

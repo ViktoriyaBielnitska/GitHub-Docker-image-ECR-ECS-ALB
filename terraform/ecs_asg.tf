@@ -1,3 +1,23 @@
+resource "aws_ecs_cluster" "nginx" {
+  name = "nginx-ecs-cluster"
+}
+
+resource "aws_ecs_service" "nginx" {
+  name            = "nginx-service"
+  cluster         = aws_ecs_cluster.nginx.id
+  task_definition = aws_ecs_task_definition.nginx.arn
+  desired_count   = 1
+  launch_type     = "EC2"
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.nginx.arn
+    container_name   = "nginx"
+    container_port   = 80
+  }
+
+  depends_on = [aws_autoscaling_attachment.ecs_alb_attachment]
+}
+
 resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
   role       = data.aws_iam_role.ecs_instance_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
@@ -31,7 +51,7 @@ resource "aws_launch_template" "ecs" {
 
   user_data = base64encode(<<EOF
 #!/bin/bash
-echo ECS_CLUSTER=${data.aws_ecs_cluster.existing.cluster_name} >> /etc/ecs/ecs.config
+echo ECS_CLUSTER=${aws_ecs_cluster.nginx.name} >> /etc/ecs/ecs.config
 EOF
   )
 }
@@ -49,6 +69,7 @@ resource "aws_autoscaling_group" "ecs" {
     id      = aws_launch_template.ecs.id
     version = "$Latest"
   }
+
 
   # Опціонально: Target Group для ALB
   # target_group_arns = [aws_lb_target_group.nginx.arn]
@@ -68,4 +89,25 @@ resource "aws_autoscaling_group" "ecs" {
     value               = "dev"
     propagate_at_launch = true
   }
+}
+
+resource "aws_lb_target_group" "nginx" {
+  name     = "nginx-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.aws_vpc.selected.id
+
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200"
+  }
+}
+
+resource "aws_autoscaling_attachment" "ecs_alb_attachment" {
+  autoscaling_group_name = aws_autoscaling_group.ecs.name
+  lb_target_group_arn    = aws_lb_target_group.nginx.arn
 }
