@@ -4,7 +4,7 @@ resource "aws_ecs_task_definition" "nginx" {
   network_mode             = "bridge"
   cpu                      = "128"
   memory                   = "256"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([
     {
