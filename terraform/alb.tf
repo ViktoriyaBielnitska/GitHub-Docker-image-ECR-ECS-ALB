@@ -5,7 +5,7 @@ resource "aws_lb_listener" "http" {
 
   default_action {
     type             = "fixed-response"
-    target_group_arn = aws_lb_target_group.nginx.arn
+    target_group_arn = data.aws_lb_target_group.nginx.arn
 
     fixed_response {
       content_type = "text/plain"
