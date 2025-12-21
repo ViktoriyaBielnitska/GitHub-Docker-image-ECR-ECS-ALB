@@ -36,11 +36,12 @@ echo ECS_CLUSTER=${aws_ecs_cluster.nginx.name} >> /etc/ecs/ecs.config
 EOF
   )
 }
+
 ##########################
 # TARGET GROUP
 ##########################
 resource "aws_lb_target_group" "nginx" {
-  name     = "nginx-tg-vika"
+  name     = "nginx-tg-${random_id.suffix.hex}"
   port     = 80
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.selected.id
@@ -53,6 +54,10 @@ resource "aws_lb_target_group" "nginx" {
     unhealthy_threshold = 2
     matcher             = "200"
   }
+}
+
+resource "random_id" "suffix" {
+  byte_length = 2
 }
 
 ##########################
@@ -97,19 +102,15 @@ resource "aws_ecs_task_definition" "nginx" {
   cpu                      = "128"
   memory                   = "256"
 
-  container_definitions = jsonencode([
-    {
-      name      = "nginx"
-      image     = "386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello:latest"
-      essential = true
-      portMappings = [
-        {
-          containerPort = 80
-          hostPort      = 80
-        }
-      ]
-    }
-  ])
+  container_definitions = jsonencode([{
+    name      = "nginx"
+    image     = "386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello:latest"
+    essential = true
+    portMappings = [{
+      containerPort = 80
+      hostPort      = 80
+    }]
+  }])
 }
 
 ##########################
@@ -127,4 +128,6 @@ resource "aws_ecs_service" "nginx" {
     container_name   = "nginx"
     container_port   = 80
   }
+
+  depends_on = [aws_autoscaling_group.ecs]
 }
