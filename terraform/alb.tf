@@ -4,13 +4,9 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type             = "fixed-response"
+    type             = "forward"
     target_group_arn = data.aws_lb_target_group.nginx.arn
-
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "OK"
-      status_code  = "200"
-    }
   }
+
+  depends_on = [data.aws_lb_target_group.nginx]
 }
