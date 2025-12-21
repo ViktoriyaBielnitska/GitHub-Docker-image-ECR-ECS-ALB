@@ -13,8 +13,16 @@ data "aws_subnets" "public" {
   }
 }
 
-data "aws_lb" "existing_alb" {
-  name = "nginx-alb"
+data "aws_security_group" "alb_sg" {
+  filter {
+    name   = "group-name"
+    values = ["alb-sg"]
+  }
+
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
 }
 
 data "aws_iam_role" "ecs_instance_role" {
@@ -40,6 +48,6 @@ data "aws_ami" "ecs" {
 }
 
 data "aws_lb_listener" "http" {
-  load_balancer_arn = data.aws_lb.existing_alb.arn
+  load_balancer_arn = aws_lb.existing_alb.arn
   port              = 80
 }

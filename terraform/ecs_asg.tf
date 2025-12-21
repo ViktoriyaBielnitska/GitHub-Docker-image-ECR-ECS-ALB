@@ -38,6 +38,13 @@ EOF
 }
 
 ##########################
+# RANDOM SUFFIX
+##########################
+resource "random_id" "suffix" {
+  byte_length = 2
+}
+
+##########################
 # TARGET GROUP
 ##########################
 resource "aws_lb_target_group" "nginx" {
@@ -56,8 +63,28 @@ resource "aws_lb_target_group" "nginx" {
   }
 }
 
-resource "random_id" "suffix" {
-  byte_length = 2
+resource "aws_lb" "existing_alb" {
+  name               = "nginx-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [data.aws_security_group.alb_sg.id]
+  subnets            = data.aws_subnets.public.ids
+}
+
+##########################
+# ALB LISTENER
+##########################
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.existing_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.nginx.arn
+  }
+
+  depends_on = [aws_lb_target_group.nginx]
 }
 
 ##########################
@@ -129,5 +156,8 @@ resource "aws_ecs_service" "nginx" {
     container_port   = 80
   }
 
-  depends_on = [aws_autoscaling_group.ecs]
+  depends_on = [
+    aws_autoscaling_group.ecs,
+    aws_lb_listener.http
+  ]
 }
