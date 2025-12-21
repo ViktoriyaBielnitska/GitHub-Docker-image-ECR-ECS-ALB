@@ -10,7 +10,7 @@ resource "aws_ecs_service" "nginx" {
   launch_type     = "EC2"
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.nginx.arn
+    target_group_arn = data.aws_lb_target_group.nginx.arn
     container_name   = "nginx"
     container_port   = 80
   }
@@ -91,23 +91,8 @@ resource "aws_autoscaling_group" "ecs" {
   }
 }
 
-resource "aws_lb_target_group" "nginx" {
-  name     = "nginx-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.selected.id
-
-  health_check {
-    path                = "/"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    matcher             = "200"
-  }
-}
-
 resource "aws_autoscaling_attachment" "ecs_alb_attachment" {
   autoscaling_group_name = aws_autoscaling_group.ecs.name
-  lb_target_group_arn    = aws_lb_target_group.nginx.arn
+  lb_target_group_arn    = data.aws_lb_target_group.nginx.arn
+
 }

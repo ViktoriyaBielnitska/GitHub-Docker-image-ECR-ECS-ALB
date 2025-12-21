@@ -9,6 +9,10 @@ data "aws_subnets" "public" {
   }
 }
 
+data "aws_lb_target_group" "nginx" {
+  name = "nginx-tg"
+}
+
 data "aws_ecr_repository" "nginx" {
   name = "nginx-hello"
 }
