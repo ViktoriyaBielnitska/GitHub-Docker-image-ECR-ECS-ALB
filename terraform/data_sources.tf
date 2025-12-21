@@ -13,10 +13,6 @@ data "aws_ecs_cluster" "existing" {
   cluster_name = "nginx-ecs-cluster"
 }
 
-data "aws_ecr_repository" "nginx" {
-  name = "nginx-hello"
-}
-
 data "aws_security_group" "alb_sg" {
   filter {
     name   = "group-name"

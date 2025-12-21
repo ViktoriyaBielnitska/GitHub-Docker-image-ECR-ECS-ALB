@@ -9,7 +9,7 @@ resource "aws_ecs_task_definition" "nginx" {
   container_definitions = jsonencode([
     {
       name      = "nginx"
-      image     = "386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello:latest"
+      image     = "public.ecr.aws/c5l2w2r3/nginx-hello:latest"
       essential = true
 
       portMappings = [
