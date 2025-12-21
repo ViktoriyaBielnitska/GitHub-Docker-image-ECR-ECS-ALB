@@ -40,7 +40,7 @@ EOF
 # TARGET GROUP
 ##########################
 resource "aws_lb_target_group" "nginx" {
-  name     = "nginx-tg"
+  name     = "nginx-tg-vika"
   port     = 80
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.selected.id
