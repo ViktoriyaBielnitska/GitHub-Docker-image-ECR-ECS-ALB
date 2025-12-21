@@ -1,3 +1,7 @@
+##########################
+# DATA SOURCES
+##########################
+
 data "aws_vpc" "selected" {
   id = var.vpc_id
 }
@@ -7,23 +11,6 @@ data "aws_subnets" "public" {
     name   = "vpc-id"
     values = [var.vpc_id]
   }
-}
-
-data "aws_lb_target_group" "nginx" {
-  name = "nginx-tg"
-}
-
-data "aws_ecr_repository" "nginx" {
-  name = "nginx-hello"
-}
-
-data "aws_security_group" "alb_sg" {
-  filter {
-    name   = "group-name"
-    values = ["alb-sg"]
-  }
-
-  vpc_id = var.vpc_id
 }
 
 data "aws_lb" "existing_alb" {
@@ -37,6 +24,17 @@ data "aws_iam_role" "ecs_instance_role" {
 data "aws_iam_instance_profile" "ecs_instance_profile" {
   name = "ecs-instance-profile"
 }
+
 data "aws_iam_role" "ecs_task_execution_role" {
   name = "ecs-task-execution-role"
+}
+
+data "aws_ami" "ecs" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-ecs-hvm-*"]
+  }
 }
