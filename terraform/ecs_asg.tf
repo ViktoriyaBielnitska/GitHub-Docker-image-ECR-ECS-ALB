@@ -13,6 +13,11 @@ resource "random_id" "ecs_svc" {
   byte_length = 2
 }
 
+resource "random_id" "sg_suffix" {
+  byte_length = 2
+
+}
+
 ##########################
 # IAM POLICIES
 ##########################
@@ -37,7 +42,7 @@ resource "aws_ecs_cluster" "nginx" {
 # SECURITY GROUPS
 ##########################
 resource "aws_security_group" "ecs_sg" {
-  name        = "ecs-sg"
+  name        = "ecs-sg-${random_id.sg_suffix.hex}"
   description = "Allow traffic from ALB"
   vpc_id      = data.aws_vpc.selected.id
 }
@@ -55,7 +60,7 @@ resource "aws_security_group_rule" "allow_alb_http" {
 # LAUNCH TEMPLATE
 ##########################
 resource "aws_launch_template" "ecs" {
-  name_prefix   = "ecs-lt-"
+  name_prefix   = "ecs-lt-${random_id.lb_suffix.hex}"
   image_id      = data.aws_ami.ecs.id
   instance_type = var.ecs_instance_type
 
