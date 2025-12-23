@@ -113,8 +113,11 @@ resource "aws_launch_template" "ecs" {
     name = data.aws_iam_instance_profile.ecs_instance_profile.name
   }
 
-  # Замість security_group_names використати vpc_security_group_ids
-  vpc_security_group_ids = [aws_security_group.ecs_sg.id]
+  network_interfaces {
+    associate_public_ip_address = true
+    device_index                = 0
+    security_groups             = [aws_security_group.ecs_sg.id]
+  }
 
   user_data = base64encode(<<EOF
 #!/bin/bash
@@ -122,6 +125,7 @@ echo ECS_CLUSTER=${aws_ecs_cluster.nginx.name} >> /etc/ecs/ecs.config
 EOF
   )
 }
+
 
 ##########################
 # TARGET GROUP
