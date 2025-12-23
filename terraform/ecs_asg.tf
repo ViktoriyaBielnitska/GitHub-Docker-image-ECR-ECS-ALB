@@ -150,7 +150,7 @@ resource "aws_ecs_task_definition" "nginx" {
 # ECS SERVICE
 ##########################
 resource "aws_ecs_service" "nginx" {
-  name            = "nginx-service"
+  name            = "nginx-service-${random_id.ecs_svc.hex}"
   cluster         = aws_ecs_cluster.nginx.id
   task_definition = aws_ecs_task_definition.nginx.arn
   desired_count   = 1
