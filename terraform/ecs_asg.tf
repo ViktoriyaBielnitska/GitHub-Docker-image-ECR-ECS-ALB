@@ -38,13 +38,6 @@ EOF
 }
 
 ##########################
-# RANDOM SUFFIX
-##########################
-resource "random_id" "suffix" {
-  byte_length = 2
-}
-
-##########################
 # TARGET GROUP
 ##########################
 resource "aws_lb_target_group" "nginx" {
@@ -63,7 +56,7 @@ resource "aws_lb_target_group" "nginx" {
   }
 }
 
-resource "aws_lb" "existing_alb" {
+resource "aws_lb" "nginx_alb" {
   name               = "nginx-alb"
   internal           = false
   load_balancer_type = "application"
@@ -71,11 +64,17 @@ resource "aws_lb" "existing_alb" {
   subnets            = data.aws_subnets.public.ids
 }
 
+
+resource "random_id" "suffix" {
+  byte_length = 2
+}
+
+
 ##########################
 # ALB LISTENER
 ##########################
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.existing_alb.arn
+  load_balancer_arn = aws_lb.nginx_alb.arn
   port              = 80
   protocol          = "HTTP"
 
@@ -84,6 +83,7 @@ resource "aws_lb_listener" "http" {
     target_group_arn = aws_lb_target_group.nginx.arn
   }
 }
+
 
 ##########################
 # AUTO SCALING GROUP
