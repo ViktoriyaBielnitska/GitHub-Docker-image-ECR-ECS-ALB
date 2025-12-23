@@ -9,7 +9,7 @@ resource "random_id" "tg_suffix" {
   byte_length = 2
 }
 
-resource "random_id" "ecs_svc" { # <- додано для унікального ECS сервісу
+resource "random_id" "ecs_svc" {
   byte_length = 2
 }
 
@@ -34,6 +34,24 @@ resource "aws_ecs_cluster" "nginx" {
 }
 
 ##########################
+# SECURITY GROUPS
+##########################
+resource "aws_security_group" "ecs_sg" {
+  name        = "ecs-sg"
+  description = "Allow traffic from ALB"
+  vpc_id      = data.aws_vpc.selected.id
+}
+
+resource "aws_security_group_rule" "allow_alb_http" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.ecs_sg.id
+  source_security_group_id = data.aws_security_group.alb_sg.id
+}
+
+##########################
 # LAUNCH TEMPLATE
 ##########################
 resource "aws_launch_template" "ecs" {
@@ -44,6 +62,8 @@ resource "aws_launch_template" "ecs" {
   iam_instance_profile {
     name = data.aws_iam_instance_profile.ecs_instance_profile.name
   }
+
+  security_group_names = [aws_security_group.ecs_sg.name]
 
   user_data = base64encode(<<EOF
 #!/bin/bash
@@ -56,10 +76,11 @@ EOF
 # TARGET GROUP
 ##########################
 resource "aws_lb_target_group" "nginx" {
-  name     = "nginx-tg-${random_id.tg_suffix.hex}"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.selected.id
+  name        = "nginx-tg-${random_id.tg_suffix.hex}"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.selected.id
+  target_type = "instance"
 
   health_check {
     path                = "/"
@@ -158,6 +179,8 @@ resource "aws_ecs_service" "nginx" {
   task_definition = aws_ecs_task_definition.nginx.arn
   desired_count   = 1
   launch_type     = "EC2"
+
+  health_check_grace_period_seconds = 60
 
   load_balancer {
     target_group_arn = aws_lb_target_group.nginx.arn
