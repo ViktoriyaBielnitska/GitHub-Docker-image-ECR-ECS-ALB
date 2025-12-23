@@ -1,4 +1,3 @@
-
 ##########################
 # RANDOM IDS FOR UNIQUE NAMES
 ##########################
@@ -7,6 +6,10 @@ resource "random_id" "lb_suffix" {
 }
 
 resource "random_id" "tg_suffix" {
+  byte_length = 2
+}
+
+resource "random_id" "ecs_svc" { # <- додано для унікального ECS сервісу
   byte_length = 2
 }
 
