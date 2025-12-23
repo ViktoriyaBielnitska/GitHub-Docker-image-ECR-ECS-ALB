@@ -103,7 +103,7 @@ resource "aws_ecs_service" "nginx" {
   launch_type     = "EC2"
 
   network_configuration {
-    subnets          = data.aws_subnets.private.ids
+    subnets          = data.aws_subnets.public.ids
     security_groups  = [aws_security_group.ecs_sg.id]
     assign_public_ip = false
   }
