@@ -1,6 +1,4 @@
-##########################
 # DATA SOURCES
-##########################
 
 data "aws_vpc" "selected" {
   id = var.vpc_id
@@ -44,5 +42,17 @@ data "aws_ami" "ecs" {
   filter {
     name   = "name"
     values = ["amzn2-ami-ecs-hvm-*"]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+
+  filter {
+    name   = "tag:Tier"
+    values = ["Private"]
   }
 }

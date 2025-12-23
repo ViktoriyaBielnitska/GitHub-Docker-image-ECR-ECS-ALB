@@ -1,6 +1,5 @@
-##########################
 # RANDOM IDS FOR UNIQUE NAMES
-##########################
+
 resource "random_id" "lb_suffix" {
   byte_length = 2
 }
@@ -17,44 +16,23 @@ resource "random_id" "sg_suffix" {
   byte_length = 2
 
 }
-##########################
-# NAT GATEWAY
-##########################
 
-# Elastic IP для NAT Gateway
 resource "aws_eip" "nat" {
   vpc = true
 }
 
-# NAT Gateway у публічній підмережі
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = data.aws_subnets.public.ids[0]
 }
 
-# Route Table для приватної підмережі
 resource "aws_route_table" "private" {
   vpc_id = data.aws_vpc.selected.id
 }
-
-# Route через NAT Gateway для приватної підмережі
 resource "aws_route" "private_internet" {
   route_table_id         = aws_route_table.private.id
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.nat.id
-}
-
-# Ассоціація Route Table з приватною підмережою
-data "aws_subnets" "private" {
-  filter {
-    name   = "vpc-id"
-    values = [var.vpc_id]
-  }
-
-  filter {
-    name   = "tag:Tier"
-    values = ["Private"]
-  }
 }
 
 resource "aws_route_table_association" "private" {
@@ -63,9 +41,8 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
-##########################
 # IAM POLICIES
-##########################
+
 resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
   role       = data.aws_iam_role.ecs_instance_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
@@ -76,16 +53,14 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-##########################
 # ECS CLUSTER
-##########################
+
 resource "aws_ecs_cluster" "nginx" {
   name = "nginx-ecs-cluster"
 }
 
-##########################
 # SECURITY GROUPS
-##########################
+
 resource "aws_security_group" "ecs_sg" {
   name        = "ecs-sg-${random_id.sg_suffix.hex}"
   description = "Allow traffic from ALB"
@@ -101,9 +76,8 @@ resource "aws_security_group_rule" "allow_alb_http" {
   source_security_group_id = data.aws_security_group.alb_sg.id
 }
 
-##########################
 # LAUNCH TEMPLATE
-##########################
+
 resource "aws_launch_template" "ecs" {
   name_prefix   = "ecs-lt-${random_id.lb_suffix.hex}"
   image_id      = data.aws_ami.ecs.id
@@ -126,10 +100,8 @@ EOF
   )
 }
 
-
-##########################
 # TARGET GROUP
-##########################
+
 resource "aws_lb_target_group" "nginx" {
   name        = "nginx-tg-${random_id.tg_suffix.hex}"
   port        = 80
@@ -147,9 +119,8 @@ resource "aws_lb_target_group" "nginx" {
   }
 }
 
-##########################
 # ALB
-##########################
+
 resource "aws_lb" "nginx_alb" {
   name               = "nginx-alb-${random_id.lb_suffix.hex}"
   internal           = false
@@ -158,9 +129,8 @@ resource "aws_lb" "nginx_alb" {
   subnets            = data.aws_subnets.public.ids
 }
 
-##########################
 # ALB LISTENER
-##########################
+
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.nginx_alb.arn
   port              = 80
@@ -172,9 +142,8 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-##########################
 # AUTO SCALING GROUP
-##########################
+
 resource "aws_autoscaling_group" "ecs" {
   desired_capacity    = var.desired_capacity
   min_size            = var.desired_capacity
@@ -204,9 +173,8 @@ resource "aws_autoscaling_group" "ecs" {
   }
 }
 
-##########################
 # ECS TASK DEFINITION
-##########################
+
 resource "aws_ecs_task_definition" "nginx" {
   family                   = "nginx-hello"
   network_mode             = "bridge"
@@ -225,9 +193,8 @@ resource "aws_ecs_task_definition" "nginx" {
   }])
 }
 
-##########################
 # ECS SERVICE
-##########################
+
 resource "aws_ecs_service" "nginx" {
   name            = "nginx-service-${random_id.ecs_svc.hex}"
   cluster         = aws_ecs_cluster.nginx.id
