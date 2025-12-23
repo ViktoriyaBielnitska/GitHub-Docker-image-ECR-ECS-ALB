@@ -17,6 +17,51 @@ resource "random_id" "sg_suffix" {
   byte_length = 2
 
 }
+##########################
+# NAT GATEWAY
+##########################
+
+# Elastic IP для NAT Gateway
+resource "aws_eip" "nat" {
+  vpc = true
+}
+
+# NAT Gateway у публічній підмережі
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = data.aws_subnets.public.ids[0]
+}
+
+# Route Table для приватної підмережі
+resource "aws_route_table" "private" {
+  vpc_id = data.aws_vpc.selected.id
+}
+
+# Route через NAT Gateway для приватної підмережі
+resource "aws_route" "private_internet" {
+  route_table_id         = aws_route_table.private.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat.id
+}
+
+# Ассоціація Route Table з приватною підмережою
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+
+  filter {
+    name   = "tag:Tier"
+    values = ["Private"]
+  }
+}
+
+resource "aws_route_table_association" "private" {
+  for_each       = toset(data.aws_subnets.private.ids)
+  subnet_id      = each.value
+  route_table_id = aws_route_table.private.id
+}
 
 ##########################
 # IAM POLICIES
