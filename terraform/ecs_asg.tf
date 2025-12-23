@@ -63,7 +63,8 @@ resource "aws_launch_template" "ecs" {
     name = data.aws_iam_instance_profile.ecs_instance_profile.name
   }
 
-  security_group_names = [aws_security_group.ecs_sg.name]
+  # Замість security_group_names використати vpc_security_group_ids
+  vpc_security_group_ids = [aws_security_group.ecs_sg.id]
 
   user_data = base64encode(<<EOF
 #!/bin/bash
