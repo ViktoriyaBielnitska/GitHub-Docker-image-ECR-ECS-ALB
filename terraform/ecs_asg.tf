@@ -1,3 +1,15 @@
+
+##########################
+# RANDOM IDS FOR UNIQUE NAMES
+##########################
+resource "random_id" "lb_suffix" {
+  byte_length = 2
+}
+
+resource "random_id" "tg_suffix" {
+  byte_length = 2
+}
+
 ##########################
 # IAM POLICIES
 ##########################
@@ -41,7 +53,7 @@ EOF
 # TARGET GROUP
 ##########################
 resource "aws_lb_target_group" "nginx" {
-  name     = "nginx-tg-${random_id.suffix.hex}"
+  name     = "nginx-tg-${random_id.tg_suffix.hex}"
   port     = 80
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.selected.id
@@ -56,19 +68,16 @@ resource "aws_lb_target_group" "nginx" {
   }
 }
 
+##########################
+# ALB
+##########################
 resource "aws_lb" "nginx_alb" {
-  name               = "nginx-alb"
+  name               = "nginx-alb-${random_id.lb_suffix.hex}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [data.aws_security_group.alb_sg.id]
   subnets            = data.aws_subnets.public.ids
 }
-
-
-resource "random_id" "suffix" {
-  byte_length = 2
-}
-
 
 ##########################
 # ALB LISTENER
@@ -83,7 +92,6 @@ resource "aws_lb_listener" "http" {
     target_group_arn = aws_lb_target_group.nginx.arn
   }
 }
-
 
 ##########################
 # AUTO SCALING GROUP
