@@ -3,6 +3,16 @@
 ############################
 data "aws_availability_zones" "available" {}
 
+data "aws_ami" "ecs_ami" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
+  }
+}
+
 ############################
 # VPC
 ############################
@@ -22,7 +32,7 @@ module "vpc" {
 ############################
 # SECURITY GROUPS
 ############################
-# ALB Security Group
+# ALB SG
 resource "aws_security_group" "alb_sg" {
   name   = "${var.project_name}-alb"
   vpc_id = module.vpc.vpc_id
@@ -42,7 +52,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# ECS Security Group
+# ECS SG
 resource "aws_security_group" "ecs_sg" {
   name   = "${var.project_name}-ecs"
   vpc_id = module.vpc.vpc_id
@@ -92,7 +102,7 @@ resource "aws_lb_target_group" "ecs" {
   port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
-  target_type = "ip"
+  target_type = "instance"
 
   health_check {
     path                = "/"
@@ -101,10 +111,6 @@ resource "aws_lb_target_group" "ecs" {
     healthy_threshold   = 2
     unhealthy_threshold = 2
     matcher             = "200-399"
-  }
-
-  lifecycle {
-    create_before_destroy = true
   }
 }
 
@@ -117,10 +123,6 @@ resource "aws_lb_listener" "http" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ecs.arn
   }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 ############################
@@ -128,7 +130,7 @@ resource "aws_lb_listener" "http" {
 ############################
 resource "aws_ecs_task_definition" "nginx" {
   family                   = "nginx"
-  network_mode             = "awsvpc" # awsvpc для ip target
+  network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
   cpu                      = "256"
   memory                   = "512"
@@ -143,6 +145,7 @@ resource "aws_ecs_task_definition" "nginx" {
       portMappings = [
         {
           containerPort = 80
+          hostPort      = 80
           protocol      = "tcp"
         }
       ]
@@ -160,11 +163,6 @@ resource "aws_ecs_service" "nginx" {
   desired_count   = 1
   launch_type     = "EC2"
 
-  network_configuration {
-    subnets         = module.vpc.public_subnets
-    security_groups = [aws_security_group.ecs_sg.id]
-  }
-
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs.arn
     container_name   = "nginx"
@@ -173,3 +171,70 @@ resource "aws_ecs_service" "nginx" {
 
   depends_on = [aws_lb_listener.http]
 }
+
+############################
+# ECS EC2 AUTO SCALING
+############################
+resource "aws_iam_role" "ecs_instance_role" {
+  name = "${var.project_name}-ecs-instance-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy" {
+  role       = aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  name = "${var.project_name}-ecs-instance-profile"
+  role = aws_iam_role.ecs_instance_role.name
+}
+
+resource "aws_launch_template" "ecs" {
+  name_prefix   = "${var.project_name}-ecs-"
+  image_id      = data.aws_ami.ecs_ami.id
+  instance_type = "t3.micro"
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance_profile.name
+  }
+
+  user_data = base64encode(<<EOF
+#!/bin/bash
+echo ECS_CLUSTER=${aws_ecs_cluster.main.name} >> /etc/ecs/ecs.config
+EOF
+  )
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.ecs_sg.id]
+  }
+}
+
+resource "aws_autoscaling_group" "ecs" {
+  name             = "${var.project_name}-ecs-asg"
+  min_size         = 1
+  max_size         = 2
+  desired_capacity = 1
+  launch_template {
+    id      = aws_launch_template.ecs.id
+    version = "$Latest"
+  }
+  vpc_zone_identifier = module.vpc.public_subnets
+  health_check_type   = "EC2"
+
+  tag {
+    key                 = "Name"
+    value               = "${var.project_name}-ecs"
+    propagate_at_launch = true
+  }
+}
+
