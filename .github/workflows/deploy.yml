@@ -41,11 +41,13 @@ jobs:
         run: terraform validate
         working-directory: ./terraform
 
-      # ---------- TFLint ----------
-      - name: TFLint
-        uses: antonbabenko/tflint-action@v1
-        with:
-          working_directory: ./terraform
+      # ---------- Install and Run TFLint ----------
+      - name: Install TFLint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Run TFLint
+        run: tflint ./terraform
 
       # ---------- Terraform Apply ECR ----------
       - name: Terraform Apply ECR
