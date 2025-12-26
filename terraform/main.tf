@@ -153,8 +153,8 @@ resource "aws_ecs_service" "nginx" {
   launch_type     = "EC2"
 
   network_configuration {
-    subnets          = module.vpc.public_subnets
-    security_groups  = [aws_security_group.ecs_sg.id]
+    subnets         = module.vpc.public_subnets
+    security_groups = [aws_security_group.ecs_sg.id]
   }
 
   load_balancer {
