@@ -115,29 +115,37 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-############################
-# ECS SERVICE (EC2)
-############################
-resource "aws_ecs_service" "nginx" {
-  name          = "nginx"
-  cluster       = aws_ecs_cluster.main.id
-  launch_type   = "EC2"
-  desired_count = 1
+resource "aws_ecs_task_definition" "nginx" {
+  family                   = "nginx"
+  network_mode             = "bridge"
+  requires_compatibilities = ["EC2"]
+  cpu                      = "256"
+  memory                   = "512"
 
-  task_definition = jsonencode([{
-    name      = "nginx"
-    image     = "${aws_ecr_repository.nginx.repository_url}:latest"
-    cpu       = 256
-    memory    = 512
-    essential = true
-    portMappings = [
-      {
-        containerPort = 80
-        hostPort      = 80
-        protocol      = "tcp"
-      }
-    ]
-  }])
+  container_definitions = jsonencode([
+    {
+      name      = "nginx"
+      image     = "${aws_ecr_repository.nginx.repository_url}:latest"
+      cpu       = 256
+      memory    = 512
+      essential = true
+      portMappings = [
+        {
+          containerPort = 80
+          hostPort      = 80
+          protocol      = "tcp"
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "nginx" {
+  name            = "nginx"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.nginx.arn
+  desired_count   = 1
+  launch_type     = "EC2"
 
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs.arn
