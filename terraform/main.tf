@@ -92,7 +92,7 @@ resource "aws_lb_target_group" "ecs" {
   port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
-  target_type = "instance"
+  target_type = "ip" # змінили на ip, щоб ALB бачив контейнер
 
   health_check {
     path                = "/"
@@ -120,8 +120,8 @@ resource "aws_lb_listener" "http" {
 ############################
 resource "aws_ecs_task_definition" "nginx" {
   family                   = "nginx"
-  network_mode             = "bridge"
-  requires_compatibilities = ["EC2"]
+  network_mode             = "awsvpc" # awsvpc для ip target
+  requires_compatibilities = ["EC2"]  # або ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
 
@@ -135,7 +135,6 @@ resource "aws_ecs_task_definition" "nginx" {
       portMappings = [
         {
           containerPort = 80
-          hostPort      = 80
           protocol      = "tcp"
         }
       ]
@@ -153,10 +152,17 @@ resource "aws_ecs_service" "nginx" {
   desired_count   = 1
   launch_type     = "EC2"
 
+  network_configuration {
+    subnets          = module.vpc.public_subnets
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true
+  }
+
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs.arn
     container_name   = "nginx"
     container_port   = 80
   }
+
   depends_on = [aws_lb_listener.http]
 }
