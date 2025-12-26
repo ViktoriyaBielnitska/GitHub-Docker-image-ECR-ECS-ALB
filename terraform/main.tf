@@ -85,7 +85,7 @@ module "ecs" {
 }
 
 ############################
-# APPLICATION LOAD BALANCER (без модуля)
+# APPLICATION LOAD BALANCER
 ############################
 resource "aws_lb" "alb" {
   name               = "${var.project_name}-alb"
@@ -113,6 +113,7 @@ resource "aws_lb_target_group" "ecs" {
 }
 
 resource "aws_lb_listener" "http" {
+  depends_on = [aws_lb_target_group.ecs]
   load_balancer_arn = aws_lb.alb.arn
   port              = 80
   protocol          = "HTTP"
