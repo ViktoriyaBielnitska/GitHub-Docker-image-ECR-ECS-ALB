@@ -28,7 +28,6 @@ resource "aws_security_group" "alb_sg" {
   vpc_id = module.vpc.vpc_id
 
   ingress {
-    description = "Allow HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -69,10 +68,6 @@ resource "aws_security_group" "ecs_sg" {
 resource "aws_ecr_repository" "nginx" {
   name                 = "${var.project_name}-nginx"
   image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
 }
 
 ############################
@@ -90,7 +85,6 @@ resource "aws_lb" "alb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = module.vpc.public_subnets
-  internal           = false
 }
 
 resource "aws_lb_target_group" "ecs" {
@@ -108,10 +102,6 @@ resource "aws_lb_target_group" "ecs" {
     unhealthy_threshold = 2
     matcher             = "200-399"
   }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_lb_listener" "http" {
@@ -123,51 +113,43 @@ resource "aws_lb_listener" "http" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ecs.arn
   }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 ############################
-# ECS SERVICE (EC2, без окремого Task Definition)
+# ECS SERVICE (EC2)
 ############################
-module "ecs_service" {
-  source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.7"
-
-  name         = "nginx"
-  cluster_arn  = aws_ecs_cluster.main.arn
-  launch_type  = "EC2"
-  network_mode = "bridge"
-
-  cpu           = 256
-  memory        = 512
+resource "aws_ecs_service" "nginx" {
+  name          = "nginx"
+  cluster       = aws_ecs_cluster.main.id
+  launch_type   = "EC2"
   desired_count = 1
 
-  container_definitions = {
-    nginx = {
-      image = "${aws_ecr_repository.nginx.repository_url}:latest"
-      port_mappings = [
-        {
-          containerPort = 80
-          hostPort      = 80
-          protocol      = "tcp"
-        }
-      ]
-    }
+  task_definition = jsonencode([{
+    name      = "nginx"
+    image     = "${aws_ecr_repository.nginx.repository_url}:latest"
+    cpu       = 256
+    memory    = 512
+    essential = true
+    portMappings = [
+      {
+        containerPort = 80
+        hostPort      = 80
+        protocol      = "tcp"
+      }
+    ]
+  }])
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs.arn
+    container_name   = "nginx"
+    container_port   = 80
   }
 
-  load_balancer = {
-    service = {
-      target_group_arn = aws_lb_target_group.ecs.arn
-      container_name   = "nginx"
-      container_port   = 80
-    }
+  network_configuration {
+    subnets          = module.vpc.public_subnets
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true
   }
-
-  subnet_ids         = module.vpc.public_subnets
-  security_group_ids = [aws_security_group.ecs_sg.id]
 
   depends_on = [aws_lb_listener.http]
 }
