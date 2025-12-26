@@ -102,6 +102,10 @@ resource "aws_lb_target_group" "ecs" {
     unhealthy_threshold = 2
     matcher             = "200-399"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_lb_listener" "http" {
@@ -113,6 +117,10 @@ resource "aws_lb_listener" "http" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ecs.arn
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 ############################
@@ -121,7 +129,7 @@ resource "aws_lb_listener" "http" {
 resource "aws_ecs_task_definition" "nginx" {
   family                   = "nginx"
   network_mode             = "awsvpc" # awsvpc для ip target
-  requires_compatibilities = ["EC2"]  # або ["FARGATE"]
+  requires_compatibilities = ["EC2"]
   cpu                      = "256"
   memory                   = "512"
 
