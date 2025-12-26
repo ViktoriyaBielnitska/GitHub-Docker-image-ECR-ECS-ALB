@@ -115,6 +115,9 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+############################
+# ECS TASK DEFINITION
+############################
 resource "aws_ecs_task_definition" "nginx" {
   family                   = "nginx"
   network_mode             = "bridge"
@@ -140,6 +143,9 @@ resource "aws_ecs_task_definition" "nginx" {
   ])
 }
 
+############################
+# ECS SERVICE
+############################
 resource "aws_ecs_service" "nginx" {
   name            = "nginx"
   cluster         = aws_ecs_cluster.main.id
@@ -152,12 +158,5 @@ resource "aws_ecs_service" "nginx" {
     container_name   = "nginx"
     container_port   = 80
   }
-
-  network_configuration {
-    subnets          = module.vpc.public_subnets
-    security_groups  = [aws_security_group.ecs_sg.id]
-    assign_public_ip = true
-  }
-
   depends_on = [aws_lb_listener.http]
 }
