@@ -17,6 +17,7 @@ jobs:
       IMAGE_TAG: latest
 
     steps:
+      # ---------- Checkout code ----------
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -26,6 +27,12 @@ jobs:
         with:
           terraform_version: 1.6.6
 
+      # ---------- Terraform Init ----------
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform
+
+      # ---------- Terraform Format & Validate ----------
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
         working-directory: ./terraform
@@ -34,16 +41,13 @@ jobs:
         run: terraform validate
         working-directory: ./terraform
 
+      # ---------- TFLint ----------
       - name: TFLint
-        uses: terraform-linters/tflint-action@v3
+        uses: antonbabenko/tflint-action@v1
         with:
           working_directory: ./terraform
 
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ./terraform
-
-      # ---------- Create ECR repository ----------
+      # ---------- Terraform Apply ECR ----------
       - name: Terraform Apply ECR
         run: terraform apply -auto-approve -target=aws_ecr_repository.nginx
         working-directory: ./terraform
@@ -63,7 +67,7 @@ jobs:
       - name: Push Docker image to ECR
         run: docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}
 
-      # ---------- Deploy ECS / ALB ----------
+      # ---------- Terraform Deploy ECS / ALB ----------
       - name: Terraform Apply All
         run: terraform apply -auto-approve
         working-directory: ./terraform
