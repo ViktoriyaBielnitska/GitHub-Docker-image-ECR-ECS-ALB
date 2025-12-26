@@ -130,9 +130,10 @@ module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
   version = "~> 5.7"
 
-  name        = "nginx"
-  cluster_arn = module.ecs.cluster_arn
-  launch_type = "EC2"
+  name         = "nginx"
+  cluster_arn  = module.ecs.cluster_arn
+  launch_type  = "EC2"
+  network_mode = "awsvpc"
 
   cpu    = 256
   memory = 512
