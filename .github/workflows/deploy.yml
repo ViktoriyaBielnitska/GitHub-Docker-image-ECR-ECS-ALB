@@ -11,57 +11,59 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+      ACCOUNT_ID: 386930771365
+      ECR_REPO: ecs-nginx-hello-terraform-nginx
+      IMAGE_TAG: latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Terraform
+      # ---------- Setup Terraform ----------
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_wrapper: false
+          terraform_version: 1.6.6
 
-      # 3️⃣ Terraform formatting & validation
       - name: Terraform Format Check
-        run: terraform fmt -check
-        working-directory: ./terraform
-
-      - name: Terraform Init
-        run: terraform init
+        run: terraform fmt -check -recursive
         working-directory: ./terraform
 
       - name: Terraform Validate
         run: terraform validate
         working-directory: ./terraform
 
-      # 4️⃣ Apply only ECR to ensure the repository exists
+      - name: TFLint
+        uses: terraform-linters/tflint-action@v3
+        with:
+          working_directory: ./terraform
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform
+
+      # ---------- Create ECR repository ----------
       - name: Terraform Apply ECR
         run: terraform apply -auto-approve -target=aws_ecr_repository.nginx
         working-directory: ./terraform
 
-      # 5️⃣ Login to Amazon ECR
+      # ---------- Docker build & push ----------
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          region: us-east-1  
+          region: ${{ env.AWS_REGION }}
 
-      # 6️⃣ Build, tag, and push Docker image to ECR
       - name: Build Docker image
-        run: docker build -t nginx-hello ./app
-
+        run: docker build -t ${{ env.ECR_REPO }} ./docker
 
       - name: Tag Docker image
-        run: docker tag nginx-hello:latest 386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello:latest
+        run: docker tag ${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }} ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}
 
       - name: Push Docker image to ECR
-        run: docker push 386930771365.dkr.ecr.us-east-1.amazonaws.com/nginx-hello:latest
+        run: docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}
 
-      # 🔟 Apply all Terraform resources
+      # ---------- Deploy ECS / ALB ----------
       - name: Terraform Apply All
         run: terraform apply -auto-approve
         working-directory: ./terraform

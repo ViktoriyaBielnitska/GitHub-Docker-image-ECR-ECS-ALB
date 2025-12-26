@@ -1,19 +1,13 @@
-variable "aws_region" {
+variable "project_name" {
   type    = string
-  default = "us-east-1"
+  default = "ecs-nginx-hello-terraform"
+}
+variable "github_org" {
+  type        = string
+  description = "GitHub organization or username"
 }
 
-variable "vpc_id" {
-  type    = string
-  default = "vpc-0550fe5101865d5da"
-}
-
-variable "desired_capacity" {
-  type    = number
-  default = 1
-}
-
-variable "ecs_instance_type" {
-  type    = string
-  default = "t3.small"
+variable "github_repo" {
+  type        = string
+  description = "GitHub repository name"
 }
