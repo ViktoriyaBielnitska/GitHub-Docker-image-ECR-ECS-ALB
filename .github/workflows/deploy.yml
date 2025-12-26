@@ -55,7 +55,7 @@ jobs:
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
       - name: Run TFLint
-        run: tflint ./terraform
+        run: tflint --chdir=./terraform
 
       # ---------- Terraform Apply ECR ----------
       - name: Terraform Apply ECR
