@@ -22,25 +22,6 @@ module "vpc" {
 ############################
 # SECURITY GROUPS
 ############################
-module "ecs_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.1"
-
-  name   = "${var.project_name}-ecs"
-  vpc_id = module.vpc.vpc_id
-
-  ingress_with_source_security_group_id = [
-    {
-      from_port                = 80
-      to_port                  = 80
-      protocol                 = "tcp"
-      source_security_group_id = aws_security_group.alb_sg.id
-    }
-  ]
-
-  egress_rules = ["all-all"]
-}
-
 # ALB Security Group
 resource "aws_security_group" "alb_sg" {
   name   = "${var.project_name}-alb"
@@ -52,6 +33,26 @@ resource "aws_security_group" "alb_sg" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ECS Security Group
+resource "aws_security_group" "ecs_sg" {
+  name   = "${var.project_name}-ecs"
+  vpc_id = module.vpc.vpc_id
+
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
   egress {
@@ -77,15 +78,12 @@ resource "aws_ecr_repository" "nginx" {
 ############################
 # ECS CLUSTER
 ############################
-module "ecs" {
-  source  = "terraform-aws-modules/ecs/aws"
-  version = "~> 5.7"
-
-  cluster_name = var.project_name
+resource "aws_ecs_cluster" "main" {
+  name = var.project_name
 }
 
 ############################
-# APPLICATION LOAD BALANCER
+# ALB
 ############################
 resource "aws_lb" "alb" {
   name               = "${var.project_name}-alb"
@@ -100,7 +98,7 @@ resource "aws_lb_target_group" "ecs" {
   port        = 80
   protocol    = "HTTP"
   vpc_id      = module.vpc.vpc_id
-  target_type = "instance" # для EC2 launch type
+  target_type = "instance"
 
   health_check {
     path                = "/"
@@ -132,19 +130,20 @@ resource "aws_lb_listener" "http" {
 }
 
 ############################
-# ECS SERVICE (EC2)
+# ECS SERVICE (EC2, без окремого Task Definition)
 ############################
 module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
   version = "~> 5.7"
 
   name         = "nginx"
-  cluster_arn  = module.ecs.cluster_arn
+  cluster_arn  = aws_ecs_cluster.main.arn
   launch_type  = "EC2"
-  network_mode = "bridge" # для EC2
+  network_mode = "bridge"
 
-  cpu    = 256
-  memory = 512
+  cpu           = 256
+  memory        = 512
+  desired_count = 1
 
   container_definitions = {
     nginx = {
@@ -168,7 +167,7 @@ module "ecs_service" {
   }
 
   subnet_ids         = module.vpc.public_subnets
-  security_group_ids = [module.ecs_sg.security_group_id]
+  security_group_ids = [aws_security_group.ecs_sg.id]
 
-  desired_count = 1
+  depends_on = [aws_lb_listener.http]
 }
